@@ -1,8 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Toast({ mensagemProp, onClick }) {
     const [mensagem, setMensagem] = useState(mensagemProp || " ");
-
+    useEffect(() => {
+        window.electronAPI.ReceiveFromElectron("toast:receive", (event, arg) => {
+            setMensagem(arg);
+            const toast = document.getElementById('toast');
+            toast.classList.add("flex");
+            toast.classList.remove("hidden");
+            setTimeout(() => { handleClose(); }, 5000);
+        });
+    }, []);
+    
+    function handleClose() {
+        setMensagem("");
+        const toast = document.getElementById("toast");
+        toast.classList.add("hidden");
+        toast.classList.remove("flex");
+    }
+    
     return (
         <div id="toast" className="absolute right-0 bottom-20 hidden z-10 items-center justify-between rounded-t-lg border-b-2 border-primary-200 bg-primary-100 bg-clip-padding px-4 pb-2 pt-2.5 text-white">
             <div className="flex items-center font-bold">
@@ -26,7 +42,7 @@ export default function Toast({ mensagemProp, onClick }) {
             <div className="flex items-center">
                 <button
                     type="button"
-                    onClick={onClick}
+                    onClick={handleClose}
                     className="ml-2 box-content rounded-none border-none opacity-80 hover:no-underline hover:opacity-75 focus:opacity-100 focus:shadow-none focus:outline-none"
                     data-te-toast-dismiss
                     aria-label="Close"
