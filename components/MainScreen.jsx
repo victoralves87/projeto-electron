@@ -1,15 +1,16 @@
 import ImportFiles from "./ImportFiles";
 import MusicList from "./MusicList";
 
-export default function MainScreen(){
-    return(
-        <section className="grow flex flex-row bg-[#171719]">
-            <div className="w-1/6 bg-[#212124] p-10">
-                <ImportFiles></ImportFiles>
+export default function MainScreen() {
+    return (
+        <section className="flex flex-row h-full">
+            <div className="w-1/3 bg-gray-900 p-8">
+                <ImportFiles />
             </div>
-            <main className="flex mt-10 w-full flex-row justify-center h-auto">
-                <MusicList></MusicList>
+            <main className="flex flex-col flex-1 mt-8 p-4 overflow-y-auto bg-gray-800">
+                <h1 className="text-white text-2xl mb-4">Lista de Músicas</h1>
+                <MusicList />
             </main>
         </section>
-    )
+    );
 }

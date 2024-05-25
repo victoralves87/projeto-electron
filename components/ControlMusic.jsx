@@ -23,9 +23,9 @@ export default function ControlMusic() {
                 setCurrentTime(audioRef.current.currentTime);
             }
         };
-    
+
         window.electronAPI.ReceiveFromElectron("music-playable", receiveMusic);
-    
+
         return () => {
             window.electronAPI.RemoveListener("music-playable", receiveMusic);
         };
@@ -34,20 +34,37 @@ export default function ControlMusic() {
     useEffect(() => {
         // Atualizar a duração da música e o tempo atual
         if (audioRef.current) {
-            audioRef.current.addEventListener("loadedmetadata", () => {
+            const handleLoadedMetadata = () => {
                 setDuration(audioRef.current.duration);
-            });
-    
+            };
+
+            audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
+
             const interval = setInterval(() => {
                 if (!audioRef.current.paused) {
                     const time = audioRef.current.currentTime;
                     setCurrentTime(time);
                 }
             }, 1000);
-    
+
             return () => {
-                audioRef.current.removeEventListener("loadedmetadata", () => {});
+                audioRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
                 clearInterval(interval);
+            };
+        }
+    }, [audio]);
+
+    useEffect(() => {
+        // Adicionar ouvinte para detectar quando a música termina
+        if (audioRef.current) {
+            const handleEnded = () => {
+                handleNext();
+            };
+
+            audioRef.current.addEventListener("ended", handleEnded);
+
+            return () => {
+                audioRef.current.removeEventListener("ended", handleEnded);
             };
         }
     }, [audio]);
@@ -72,26 +89,49 @@ export default function ControlMusic() {
         }
     };
 
-    const previousMusic = () => {
-        if (musicIndex > 0) {
-            setMusicIndex(prev => prev - 1);
-            setAudio(`/musicas/${musicPlaylist[musicIndex - 1]}`);
+    function handleProgressBarClick(event) {
+        if (audioRef.current) {
+            const progressBar = event.currentTarget;
+            const clickPosition = event.nativeEvent.offsetX;
+            const totalWidth = progressBar.clientWidth;
+            const percentage = clickPosition / totalWidth;
+            const time = audioRef.current.duration * percentage;
+            audioRef.current.currentTime = time;
         }
-    };
+    }
 
-    const nextMusic = () => {
-        if (musicIndex < musicPlaylist.length - 1) {
-            setMusicIndex(prev => prev + 1);
-            setAudio(`/musicas/${musicPlaylist[musicIndex + 1]}`);
+    function handlePrevious() {
+        if (musicIndex > 0) {
+            setMusicIndex(prevIndex => {
+                const newIndex = prevIndex - 1;
+                setAudio(`/musicas/${musicPlaylist[newIndex]}`);
+                audioRef.current.load();
+                audioRef.current.play();
+                setCurrentTime(audioRef.current.currentTime);
+                return newIndex;
+            });
         }
-    };
+    }
+
+    function handleNext() {
+        if (musicIndex < musicPlaylist.length - 1) {
+            setMusicIndex(prevIndex => {
+                const newIndex = prevIndex + 1;
+                setAudio(`/musicas/${musicPlaylist[newIndex]}`);
+                audioRef.current.load();
+                audioRef.current.play();
+                setCurrentTime(audioRef.current.currentTime);
+                return newIndex;
+            });
+        }
+    }
 
     return (
         <div className="w-96 h-14 px-8 flex-col justify-center items-center gap-4 inline-flex">
             <div className="flex justify-center items-center gap-8">
                 <div className="flex justify-start items-start gap-2.5">
                     <div className="relative">
-                        <PreviousIcon onClick={previousMusic} />
+                        <PreviousIcon onClick={handlePrevious} />
                     </div>
                 </div>
                 <div id="play" className="flex justify-start items-start gap-2.5">
@@ -109,7 +149,7 @@ export default function ControlMusic() {
                 </div>
                 <div className="w-4 h-4 justify-start items-start gap-2.5 flex">
                     <div className="w-4 h-4 relative">
-                        <NextIcon onClick={nextMusic} />
+                        <NextIcon onClick={handleNext} />
                     </div>
                 </div>
             </div>
@@ -117,7 +157,10 @@ export default function ControlMusic() {
                 <div className="text-center text-xs text-white font-semibold leading-tight tracking-wide">
                     <p>{formatTime(duration)}</p>
                 </div>
-                <div className="w-96 h-1 relative bg-neutral-600 rounded-full">
+                <div 
+                    className="w-96 h-1 relative bg-neutral-600 rounded-full"
+                    onClick={handleProgressBarClick}
+                >
                     <div
                         id="progress-bar"
                         className="h-1 rounded-full bg-white absolute top-1/2 transform -translate-y-1/2"
