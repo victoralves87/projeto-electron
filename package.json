@@ -22,5 +22,15 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.fakefy",
+    "productName": "tocador",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    }
   }
 }
